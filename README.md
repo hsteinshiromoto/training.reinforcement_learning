@@ -3,8 +3,13 @@ training.reinforcement_learning
 
 Code that I used to learn about reinforcement learning
 
-Project Organization
-------------
+
+- [training.reinforcement_learning](#trainingreinforcementlearning)
+- [Project Organization](#project-organization)
+- [References](#references)
+
+# Project Organization
+
 
     ├── LICENSE
     ├── Makefile           <- Makefile with commands like `make data` or `make train`
@@ -52,6 +57,10 @@ Project Organization
     └── tox.ini            <- tox file with settings for running tox; see tox.readthedocs.io
 
 
---------
-
 <p><small>Project based on the <a target="_blank" href="https://drivendata.github.io/cookiecutter-data-science/">cookiecutter data science project template</a>. #cookiecutterdatascience</small></p>
+
+# References
+
+* [Liu19] Y. (H.) Liu. "Pytorch 1.x Reinforcement Learning Cookbook". Packt. 2019
+* [Lon19] A. Lonza. "Reinforcement Learning Algorithms with Python". Packt. 2019
+* [Rav18] S. Ravichandiran. "Hands-On Reinforcement Learning with Python". Packt. 2018
