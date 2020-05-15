@@ -1,80 +1,74 @@
-.PHONY: clean data lint requirements sync_data_to_s3 sync_data_from_s3
+# ---
+# Export environ variables defined in .env file:
+# ---
 
-#################################################################################
-# GLOBALS                                                                       #
-#################################################################################
+include .env
+export $(shell sed 's/=.*//' .env)
 
-PROJECT_DIR := $(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
-BUCKET = [OPTIONAL] your-bucket-for-syncing-data (do not include 's3://')
+# Check if variable is set in .env
+ifndef REGISTRY_USER
+$(error REGISTRY_USER is not set)
+endif
+
+# ---
+# Arguments
+# ---
+
+# Files to be copied in build phase of the container
+ifndef DOCKER_TAG
+DOCKER_TAG=latest
+endif
+
+ifndef DOCKER_REGISTRY
+DOCKER_REGISTRY=docker.pkg.github.com
+endif
+
+ifndef DOCKER_PARENT_IMAGE
+DOCKER_PARENT_IMAGE="python:3.7-slim-stretch"
+endif
+
+# ---
+# Global Variables
+# ---
+
+PROJECT_PATH := $(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
+PROJECT_NAME = $(shell basename ${PROJECT_PATH})
+
+ifndef DOCKER_IMAGE_NAME
+DOCKER_IMAGE_NAME=${PROJECT_NAME}
+endif
+
+DOCKER_IMAGE = ${DOCKER_REGISTRY}/${REGISTRY_USER}/${PROJECT_NAME}/${DOCKER_IMAGE_NAME}
+
+BUILD_DATE = $(shell date +%Y%m%d-%H:%M:%S)
+
+BUCKET = ${PROJECT_NAME}
 PROFILE = default
-PROJECT_NAME = training.reinforcement_learning
-PYTHON_INTERPRETER = python3
 
-ifeq (,$(shell which conda))
-HAS_CONDA=False
-else
-HAS_CONDA=True
-endif
+# ---
+# Commands
+# ---
 
-#################################################################################
-# COMMANDS                                                                      #
-#################################################################################
+## Build container locally
+build:
+	$(eval DOCKER_IMAGE_TAG=${DOCKER_IMAGE}:${DOCKER_TAG})
 
-## Install Python Dependencies
-requirements: test_environment
-	$(PYTHON_INTERPRETER) -m pip install -U pip setuptools wheel
-	$(PYTHON_INTERPRETER) -m pip install -r requirements.txt
+	@echo "Building docker image ${DOCKER_IMAGE_TAG}"
+	docker build --build-arg BUILD_DATE=${BUILD_DATE} \
+				 --build-arg DOCKER_PARENT_IMAGE=${DOCKER_PARENT_IMAGE} \
+		   		 -t ${DOCKER_IMAGE_TAG} .
 
-## Make Dataset
-data: requirements
-	$(PYTHON_INTERPRETER) src/data/make_dataset.py data/raw data/processed
+get_toc_script:
+	mkdir -p bin
+	wget https://raw.githubusercontent.com/ekalinin/github-markdown-toc/master/gh-md-toc
+	chmod a+x gh-md-toc
+	mv gh-md-toc bin/
 
-## Delete all compiled Python files
-clean:
-	find . -type f -name "*.py[co]" -delete
-	find . -type d -name "__pycache__" -delete
-
-## Lint using flake8
-lint:
-	flake8 src
-
-## Upload Data to S3
-sync_data_to_s3:
-ifeq (default,$(PROFILE))
-	aws s3 sync data/ s3://$(BUCKET)/data/
-else
-	aws s3 sync data/ s3://$(BUCKET)/data/ --profile $(PROFILE)
-endif
-
-## Download Data from S3
-sync_data_from_s3:
-ifeq (default,$(PROFILE))
-	aws s3 sync s3://$(BUCKET)/data/ data/
-else
-	aws s3 sync s3://$(BUCKET)/data/ data/ --profile $(PROFILE)
-endif
-
-## Set up python interpreter environment
-create_environment:
-ifeq (True,$(HAS_CONDA))
-		@echo ">>> Detected conda, creating conda environment."
-ifeq (3,$(findstring 3,$(PYTHON_INTERPRETER)))
-	conda create --name $(PROJECT_NAME) python=3
-else
-	conda create --name $(PROJECT_NAME) python=2.7
-endif
-		@echo ">>> New conda env created. Activate with:\nsource activate $(PROJECT_NAME)"
-else
-	$(PYTHON_INTERPRETER) -m pip install -q virtualenv virtualenvwrapper
-	@echo ">>> Installing virtualenvwrapper if not already installed.\nMake sure the following lines are in shell startup file\n\
-	export WORKON_HOME=$$HOME/.virtualenvs\nexport PROJECT_HOME=$$HOME/Devel\nsource /usr/local/bin/virtualenvwrapper.sh\n"
-	@bash -c "source `which virtualenvwrapper.sh`;mkvirtualenv $(PROJECT_NAME) --python=$(PYTHON_INTERPRETER)"
-	@echo ">>> New virtualenv created. Activate with:\nworkon $(PROJECT_NAME)"
-endif
-
-## Test python environment is setup correctly
-test_environment:
-	$(PYTHON_INTERPRETER) test_environment.py
+.PHONY: README.md
+## Generate TOC Automatically for README.md
+readme: get_toc_script
+	./bin/gh-md-toc --insert README.md
+	rm -f README.md.orig.* README.md.toc.*
 
 #################################################################################
 # PROJECT RULES                                                                 #
