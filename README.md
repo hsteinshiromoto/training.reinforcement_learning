@@ -61,6 +61,7 @@ Code that I used to learn about reinforcement learning
 
 # References
 
+* [BZ20] B. Brown and A. Zai. "Deep Reinforcement Learning in Action". Manning Publications Co. 2020
 * [Liu19] Y. (H.) Liu. "Pytorch 1.x Reinforcement Learning Cookbook". Packt. 2019
 * [Lon19] A. Lonza. "Reinforcement Learning Algorithms with Python". Packt. 2019
 * [Rav18] S. Ravichandiran. "Hands-On Reinforcement Learning with Python". Packt. 2018
