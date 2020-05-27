@@ -24,7 +24,7 @@ DOCKER_REGISTRY=docker.pkg.github.com
 endif
 
 ifndef DOCKER_PARENT_IMAGE
-DOCKER_PARENT_IMAGE="python:3.7-slim-stretch"
+DOCKER_PARENT_IMAGE="jupyter/scipy-notebook"
 endif
 
 # ---

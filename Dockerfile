@@ -3,7 +3,6 @@
 # ---
 ARG DOCKER_PARENT_IMAGE
 FROM $DOCKER_PARENT_IMAGE
-FROM pytorch/pytorch:latest
 
 # NB: Arguments should come after FROM otherwise they're deleted
 ARG BUILD_DATE
@@ -23,6 +22,7 @@ ENV TZ Australia/Sydney
 
 
 # Set container time zone
+USER root
 RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 
 LABEL org.label-schema.build-date=$BUILD_DATE \
@@ -42,14 +42,12 @@ RUN apt-get update && \
 # Copy Container Setup Scripts
 # ---
 
-COPY bin/entrypoint.sh /usr/local/bin/entrypoint.sh
 COPY bin/run_python.sh /usr/local/bin/run_python.sh
 COPY bin/test_environment.py /usr/local/bin/test_environment.py
 COPY bin/setup.py /usr/local/bin/setup.py
 COPY requirements.txt /usr/local/requirements.txt
 
-RUN chmod +x /usr/local/bin/entrypoint.sh && \
-    chmod +x /usr/local/bin/run_python.sh && \
+RUN chmod +x /usr/local/bin/run_python.sh && \
 	chmod +x /usr/local/bin/test_environment.py && \
 	chmod +x /usr/local/bin/setup.py
 
@@ -57,11 +55,8 @@ RUN bash /usr/local/bin/run_python.sh test_environment && \
 	bash /usr/local/bin/run_python.sh requirements
 
 # Create the "home" folder
-RUN mkdir -p $PROJECT_ROOT
-WORKDIR $PROJECT_ROOT
+USER jovyan
+RUN mkdir -p /home/jovyan/work
+WORKDIR /home/jovyan/work
 
-# ---
-# Set up the necessary Python environment and packages
-# ---
-EXPOSE 22
-ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
+EXPOSE 8888
