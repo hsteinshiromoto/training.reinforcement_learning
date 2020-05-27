@@ -52,7 +52,8 @@ RUN chmod +x /usr/local/bin/run_python.sh && \
 	chmod +x /usr/local/bin/setup.py
 
 RUN bash /usr/local/bin/run_python.sh test_environment && \
-	bash /usr/local/bin/run_python.sh requirements
+	bash /usr/local/bin/run_python.sh requirements && \
+    bash /usr/local/bin/run_python.sh jupyter_extensions 
 
 # Create the "home" folder
 USER jovyan
