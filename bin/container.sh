@@ -10,7 +10,7 @@ display_help() {
     echo
     echo "   -d, --deploy               deploy container"
     echo "   -h, --help                 display help"
-    echo "   -j, --jupyter_notebook     launch container with jupyter notebook"
+    echo "   -r, --run_container        launch container"
     echo
     # echo some stuff here for the -a or --add-options
     exit 1
@@ -86,22 +86,6 @@ get_container_id() {
     fi
 }
 
-# Get container id
-deploy_container() {
-    make_variables
-
-    echo "Pushing image ${DOCKER_IMAGE_TAG}"
-    docker push ${DOCKER_IMAGE_TAG}
-}
-
-registry_login() {
-    # Todo: Not working. Need to fix this!
-    make_variables
-    GITHUB_PAT=$(cat .env | grep GITHUB_PAT | awk -F'=' '{print $2}') 
-    echo ${DOCKER_REGISTRY}
-    echo ${REGISTRY_USER}
-    $(echo ${GITHUB_PAT} | docker login ${DOCKER_REGISTRY} -u ${REGISTRY_USER} --password-stdin)
-}
 
 make_variables() {
     # Get Variables From make_variables.sh
@@ -144,7 +128,7 @@ run_container() {
     if [[ -z "${CONTAINER_ID}" ]]; then
         echo "Creating Container from image ${DOCKER_IMAGE_TAG} ..."
 
-        docker run --rm -d -P -v $(pwd):/home/${PROJECT_NAME} -t ${DOCKER_IMAGE_TAG} $1 >/dev/null >&1
+        docker run --rm -d -P -v $(pwd):/home/jovyan/work -t ${DOCKER_IMAGE_TAG} $1 >/dev/null >&1
 
         echo "Done"
 
@@ -152,6 +136,19 @@ run_container() {
 	    echo "Container already running"
 	fi
 
+    sleep 5
+
+    JUPYTER_PORT=$(docker ps -f "ancestor=${PROJECT_NAME}" | grep -o "0.0.0.0:[0-9]*->8888" | cut -d ":" -f 2 | head -n 1)
+
+    echo -e "Container ID: ${BLUE}${CONTAINER_ID}${NC}"
+
+    echo -e "Port mapping: ${JUPYTER_PORT}"
+
+    JUPYTER_TOKEN=$(docker exec -i ${CONTAINER_ID} sh -c "jupyter notebook list" | tac | grep -o "token=[a-z0-9]*" | sed -n 1p | cut -d "=" -f 2)
+    echo -e "Jupyter token: ${GREEN}${JUPYTER_TOKEN}${NC}"
+
+    JUPYTER_ADDRESS=$(docker ps | grep ${DOCKER_IMAGE_TAG} | grep -o "0.0.0.0:[0-9]*")
+    echo -e "Jupyter Address: ${BLUE}http://${JUPYTER_ADDRESS}/?token=${JUPYTER_TOKEN}${NC}"
 }
 
 # Available options
